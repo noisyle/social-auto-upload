@@ -81,14 +81,14 @@ def render_video_page():
         ui.notify(f'正在调起发布页面', type='info')
         if platform == SOCIAL_MEDIA_DOUYIN:
             await douyin_setup(account_file, handle=False)
-            app = DouYinVideo(title, video_file, tags, publish_date, account_file)
+            app = DouYinVideo(title, video_file, tags, publish_date, account_file, location=location.value)
         elif platform == SOCIAL_MEDIA_KUAISHOU:
             await ks_setup(account_file, handle=True)
-            app = KSVideo(title, video_file, tags, publish_date, account_file)
+            app = KSVideo(title, video_file, tags, publish_date, account_file, location=location.value)
         elif platform == SOCIAL_MEDIA_TENCENT:
             await weixin_setup(account_file, handle=True)
             category = TencentZoneTypes.LIFESTYLE.value  # 标记原创需要否则不需要传
-            app = TencentVideo(title, video_file, tags, publish_date, account_file, category)
+            app = TencentVideo(title, video_file, tags, publish_date, account_file, category, location=location.value)
         elif platform == SOCIAL_MEDIA_TIKTOK:
             await tiktok_setup(account_file, handle=True)
             app = TiktokVideo(title, video_file, tags, publish_date, account_file)
@@ -133,6 +133,7 @@ def render_video_page():
         ui.label('发布视频')
         accounts = get_accounts()
         account = ui.select([_['platform']+'_'+_['account'] for _ in accounts], label='选择账号').classes('w-full')
+        location = ui.input(label='视频位置', placeholder='输入位置关键字').classes('w-full')
         pt = ui.radio({0: '立即发送', 1: '定时发送'}, value=0).props('inline')
         with ui.input('日期').bind_visibility(pt, 'value').classes('w-full') as date:
             with ui.menu().props('no-parent-event') as menu:

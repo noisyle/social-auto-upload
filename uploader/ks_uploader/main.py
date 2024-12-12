@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-from playwright.async_api import Playwright, async_playwright
+from playwright.async_api import Playwright, async_playwright, Page
 import os
 import asyncio
 
@@ -62,7 +62,7 @@ async def get_ks_cookie(account_file):
 
 
 class KSVideo(object):
-    def __init__(self, title, file_path, tags, publish_date: datetime, account_file):
+    def __init__(self, title, file_path, tags, publish_date: datetime, account_file, location=None):
         self.title = title  # 视频标题
         self.file_path = file_path
         self.tags = tags
@@ -70,6 +70,7 @@ class KSVideo(object):
         self.account_file = account_file
         self.date_format = '%Y-%m-%d %H:%M'
         self.local_executable_path = LOCAL_CHROME_PATH
+        self.location = location
 
     async def handle_upload_error(self, page):
         kuaishou_logger.error("视频出错了，重新上传中")
@@ -87,7 +88,7 @@ class KSVideo(object):
             browser = await playwright.chromium.launch(
                 headless=False
             )  # 创建一个浏览器上下文，使用指定的 cookie 文件
-        context = await browser.new_context(storage_state=f"{self.account_file}")
+        context = await browser.new_context(storage_state=f"{self.account_file}", permissions=['geolocation'])
         context = await set_init_script(context)
         context.on("close", lambda: context.storage_state(path=self.account_file))
 
@@ -163,6 +164,10 @@ class KSVideo(object):
         if self.publish_date != 0:
             await self.set_schedule_time(page, self.publish_date)
 
+        # 设置位置信息
+        if self.location:
+            await self.set_location(page, self.location)
+
         # 判断视频是否发布成功
         while True:
             try:
@@ -212,3 +217,9 @@ class KSVideo(object):
         await page.keyboard.type(str(publish_date_hour))
         await page.keyboard.press("Enter")
         await asyncio.sleep(1)
+
+    async def set_location(self, page: Page, location: str = "天津市"):
+        await page.locator("#rc_select_1").click()
+        await page.locator(".ant-cascader-menu-item-content").nth(0).click()
+        await page.locator("#rc_select_2").fill(location)
+        await page.locator(".ant-select-item-option-content").nth(0).click()

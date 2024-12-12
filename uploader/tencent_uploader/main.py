@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-from playwright.async_api import Playwright, async_playwright
+from playwright.async_api import Playwright, async_playwright, Page
 import os
 import asyncio
 
@@ -82,7 +82,7 @@ async def weixin_setup(account_file, handle=False):
 
 
 class TencentVideo(object):
-    def __init__(self, title, file_path, tags, publish_date: datetime, account_file, category=None):
+    def __init__(self, title, file_path, tags, publish_date: datetime, account_file, category=None, location=None):
         self.title = title  # 视频标题
         self.file_path = file_path
         self.tags = tags
@@ -90,6 +90,7 @@ class TencentVideo(object):
         self.account_file = account_file
         self.category = category
         self.local_executable_path = LOCAL_CHROME_PATH
+        self.location = location
 
     async def set_schedule_time_tencent(self, page, publish_date):
         label_element = page.locator("label").filter(has_text="定时").nth(1)
@@ -165,6 +166,10 @@ class TencentVideo(object):
         # 添加短标题
         await self.add_short_title(page)
 
+        # 设置位置信息
+        if self.location:
+            await self.set_location(page, self.location)
+
         await self.click_publish(page)
 
         await context.storage_state(path=f"{self.account_file}")  # 保存cookie
@@ -181,6 +186,12 @@ class TencentVideo(object):
         if await short_title_element.count():
             short_title = format_str_for_short_title(self.title)
             await short_title_element.fill(short_title)
+
+    async def set_location(self, page: Page, location: str = "天津市"):
+        await page.locator(".position-display-wrap").click()
+        await page.get_by_placeholder("搜索附近位置").click()
+        await page.get_by_placeholder("搜索附近位置").fill(location)
+        await page.locator(".common-option-list-wrap>.option-item").nth(1).click()
 
     async def click_publish(self, page):
         while True:

@@ -64,7 +64,7 @@ async def douyin_cookie_gen(account_file):
 
 
 class DouYinVideo(object):
-    def __init__(self, title, file_path, tags, publish_date: datetime, account_file, thumbnail_path=None):
+    def __init__(self, title, file_path, tags, publish_date: datetime, account_file, thumbnail_path=None, location=None):
         self.title = title  # 视频标题
         self.file_path = file_path
         self.tags = tags
@@ -73,6 +73,7 @@ class DouYinVideo(object):
         self.date_format = '%Y年%m月%d日 %H:%M'
         self.local_executable_path = LOCAL_CHROME_PATH
         self.thumbnail_path = thumbnail_path
+        self.location = location
 
     async def set_schedule_time_douyin(self, page, publish_date):
         # 选择包含特定文本内容的 label 元素
@@ -83,7 +84,7 @@ class DouYinVideo(object):
         publish_date_hour = publish_date.strftime("%Y-%m-%d %H:%M")
 
         await asyncio.sleep(1)
-        await page.locator('.semi-input[placeholder="日期和时间"]').click()
+        await page.get_by_placeholder("日期和时间").click()
         await page.keyboard.press("Control+KeyA")
         await page.keyboard.type(str(publish_date_hour))
         await page.keyboard.press("Enter")
@@ -170,8 +171,9 @@ class DouYinVideo(object):
         #上传视频封面
         await self.set_thumbnail(page, self.thumbnail_path)
 
-        # 更换可见元素
-        await self.set_location(page, "杭州市")
+        # 设置位置信息
+        if self.location:
+            await self.set_location(page, self.location)
 
         # 頭條/西瓜
         third_part_element = '[class^="info"] > [class^="first-part"] div div.semi-switch'
