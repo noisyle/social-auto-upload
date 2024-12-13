@@ -6,7 +6,8 @@ from uploader.douyin_uploader.main import douyin_setup, DouYinVideo
 from uploader.ks_uploader.main import ks_setup, KSVideo
 from uploader.tencent_uploader.main import weixin_setup, TencentVideo
 from uploader.tk_uploader.main_chrome import tiktok_setup, TiktokVideo
-from utils.base_social_media import SOCIAL_MEDIA_DOUYIN, SOCIAL_MEDIA_TENCENT, SOCIAL_MEDIA_KUAISHOU, SOCIAL_MEDIA_TIKTOK
+from uploader.xhs_uploader.main import xhs_setup, XHSVideo
+from utils.base_social_media import SOCIAL_MEDIA_DOUYIN, SOCIAL_MEDIA_TENCENT, SOCIAL_MEDIA_KUAISHOU, SOCIAL_MEDIA_TIKTOK, SOCIAL_MEDIA_XHS
 from utils.constant import TencentZoneTypes
 from utils.files_times import get_title_and_hashtags
 
@@ -92,6 +93,9 @@ def render_video_page():
         elif platform == SOCIAL_MEDIA_TIKTOK:
             await tiktok_setup(account_file, handle=True)
             app = TiktokVideo(title, video_file, tags, publish_date, account_file)
+        elif platform == SOCIAL_MEDIA_XHS:
+            await xhs_setup(account_file, handle=True)
+            app = XHSVideo(title, video_file, tags, publish_date, account_file)
         await app.main()
         ui.notify(f'发布视频 {row["video"]} 到 {account.value}', type='positive')
         publish_dialog.close()
@@ -183,6 +187,9 @@ def render_account_page():
             await weixin_setup(account_file, handle=True)
         elif platform.value == SOCIAL_MEDIA_TIKTOK:
             await tiktok_setup(account_file, handle=True)
+        elif platform.value == SOCIAL_MEDIA_XHS:
+            is_valid = await xhs_setup(account_file, handle=True)
+            ui.notify('cookies有效' if is_valid else 'cookies无效', type='positive' if is_valid else 'warning')
         dialog.close()
         grid.options['rowData'] = get_accounts()
         grid.update()
@@ -197,17 +204,32 @@ def render_account_page():
         grid.options['rowData'] = get_accounts()
         grid.update()
 
+    async def upload_cookies(e: events.UploadEventArguments):
+        if not account.value:
+            ui.notify('请输入账号别名', type='warning')
+            up.reset()
+            return
+        with open(os.path.join(COOKIES_DIR, platform.value+'_'+account.value+'.json'), 'wb') as f:
+            f.write(e.content.read())
+        ui.notify(f'已上传cookies {platform.value}_{account.value}', type='positive')
+
     with ui.dialog() as dialog, ui.card().classes('min-w-96'):
         ui.label('添加账号')
         platform = ui.select({
             SOCIAL_MEDIA_DOUYIN: '抖音',
             SOCIAL_MEDIA_KUAISHOU: '快手',
-            SOCIAL_MEDIA_TENCENT: '视频号'
+            SOCIAL_MEDIA_TENCENT: '视频号',
+            SOCIAL_MEDIA_XHS: '小红书'
         }, value='douyin', label='选择短视频平台').classes('w-full')
         account = ui.input(label='账号别名').classes('w-full')
+        up = ui.upload(label='上传json格式的cookies', on_upload=lambda e: upload_cookies(e), auto_upload=True).props('accept=.json') \
+            .bind_visibility_from(platform, target_name='value', value=SOCIAL_MEDIA_XHS).classes('w-full')
         with ui.row().classes('w-full justify-end'):
             ui.button('取消', on_click=dialog.close, color='white')
-            ui.button('扫码授权', on_click=lambda: show_auth_page())
+            ui.button('扫码授权', on_click=lambda: show_auth_page()) \
+                .bind_visibility_from(platform, target_name='value', backward=lambda x: x!=SOCIAL_MEDIA_XHS)
+            ui.button('确定', on_click=lambda: show_auth_page()) \
+                .bind_visibility_from(platform, target_name='value', value=SOCIAL_MEDIA_XHS)
 
     with ui.row():
         ui.button('添加账号', on_click=dialog.open)
