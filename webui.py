@@ -1,5 +1,6 @@
 from nicegui import ui, events, native
 import os
+import glob
 from datetime import datetime
 from conf import BASE_DIR
 from uploader.douyin_uploader.main import douyin_setup, DouYinVideo
@@ -50,8 +51,10 @@ def render_video_page():
             ui.notify('请选择要删除的视频', type='warning')
             return
         os.remove(os.path.join(VIDEOS_DIR, row['video']))
-        os.remove(os.path.join(VIDEOS_DIR, row['text']))
-        os.remove(os.path.join(VIDEOS_DIR, row['cover']))
+        if row['text']:
+            os.remove(os.path.join(VIDEOS_DIR, row['text']))
+        if row['cover']:
+            os.remove(os.path.join(VIDEOS_DIR, row['cover']))
         ui.notify(f'删除视频 {row["video"]}', type='positive')
         grid.options['rowData'] = get_videos()
         grid.update()
@@ -248,14 +251,20 @@ def get_videos():
     '''
     列出videos目录下的mp4文件
     '''
-    videos = [file for file in os.listdir(VIDEOS_DIR) if file.endswith('.mp4')]
-    return [{'video': _, 'text': _.rsplit('.', 1)[0] + '.txt', 'cover': _.rsplit('.', 1)[0] + '.png'} for _ in videos]
+    videos = [file for file in glob.glob('*.mp4', root_dir=VIDEOS_DIR)]
+    texts = [file for file in glob.glob('*.txt', root_dir=VIDEOS_DIR)]
+    covers = [file for file in glob.glob('*.png', root_dir=VIDEOS_DIR)]
+    return [{
+        'video': _,
+        'text': _.rsplit('.', 1)[0] + '.txt' if (_.rsplit('.', 1)[0] + '.txt' in texts) else None,
+        'cover': _.rsplit('.', 1)[0] + '.png' if (_.rsplit('.', 1)[0] + '.png' in covers) else None,
+    } for _ in videos]
 
 def get_accounts():
     '''
     列出cookies目录下的json文件
     '''
-    accounts = [file.rsplit('.', 1)[0].split('_', 1) for file in os.listdir('cookies') if file.endswith('.json')]
+    accounts = [file.rsplit('.', 1)[0].split('_', 1) for file in glob.glob('*.json', root_dir='cookies')]
     return [{'platform': _[0], 'account': _[1]} for _ in accounts]
 
 def render_frame(show_menu: bool = True):
