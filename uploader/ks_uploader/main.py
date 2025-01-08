@@ -125,7 +125,7 @@ class KSVideo(object):
         await page.get_by_text("描述").locator("xpath=following-sibling::div").click()
         kuaishou_logger.info("clear existing title")
         await page.keyboard.press("Backspace")
-        await page.keyboard.press("Control+KeyA")
+        await page.keyboard.press("ControlOrMeta+A")
         await page.keyboard.press("Delete")
         kuaishou_logger.info("filling new  title")
         await page.keyboard.type(self.title)
@@ -213,7 +213,7 @@ class KSVideo(object):
         await page.locator('div.ant-picker-input input[placeholder="选择日期时间"]').click()
         await asyncio.sleep(1)
 
-        await page.keyboard.press("Control+KeyA")
+        await page.keyboard.press("ControlOrMeta+A")
         await page.keyboard.type(str(publish_date_hour))
         await page.keyboard.press("Enter")
         await asyncio.sleep(1)

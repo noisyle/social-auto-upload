@@ -85,7 +85,7 @@ class DouYinVideo(object):
 
         await asyncio.sleep(1)
         await page.get_by_placeholder("日期和时间").click()
-        await page.keyboard.press("Control+KeyA")
+        await page.keyboard.press("ControlOrMeta+A")
         await page.keyboard.type(str(publish_date_hour))
         await page.keyboard.press("Enter")
 
@@ -139,7 +139,7 @@ class DouYinVideo(object):
             titlecontainer = page.locator(".notranslate")
             await titlecontainer.click()
             await page.keyboard.press("Backspace")
-            await page.keyboard.press("Control+KeyA")
+            await page.keyboard.press("ControlOrMeta+A")
             await page.keyboard.press("Delete")
             await page.keyboard.type(self.title)
             await page.keyboard.press("Enter")
